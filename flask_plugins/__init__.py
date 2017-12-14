@@ -295,7 +295,7 @@ class PluginManager(object):
 
     def find_plugins(self):
         """Find all possible plugins in the plugin folder."""
-        for item in os.listdir(self.plugin_folder):
+        for item in sorted(os.listdir(self.plugin_folder)):
             if os.path.isdir(os.path.join(self.plugin_folder, item)) \
                     and os.path.exists(
                         os.path.join(self.plugin_folder, item, "__init__.py")):
