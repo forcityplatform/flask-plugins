@@ -221,6 +221,9 @@ class PluginManager(object):
         # All found plugins
         self._found_plugins = dict()
 
+        # Plugins by package; allow sorting on path
+        self._plugins_by_package = None
+
         if app is not None:
             self.init_app(app, **kwargs)
 
@@ -255,9 +258,9 @@ class PluginManager(object):
     def plugins(self):
         """Returns all enabled plugins as a dictionary. You still need to
         call the setup method to fully enable them."""
-        if self._plugins is None:
+        if self._plugins_by_package is None:
             self.load_plugins()
-        return self._plugins
+        return self._plugins_by_package
 
     def load_plugins(self):
         """Loads all plugins. They are still disabled.
@@ -266,6 +269,7 @@ class PluginManager(object):
         """
         self._plugins = {}
         self._all_plugins = {}
+        self._plugins_by_package = {}
         for plugin_name, plugin_package in iteritems(self.find_plugins()):
 
             try:
@@ -287,6 +291,7 @@ class PluginManager(object):
 
             try:
                 if self._available_plugins[plugin_name]:
+                    self._plugins_by_package[plugin_package] = plugin_instance
                     self._plugins[plugin_instance.identifier] = plugin_instance
             except KeyError:
                 pass
@@ -295,7 +300,7 @@ class PluginManager(object):
 
     def find_plugins(self):
         """Find all possible plugins in the plugin folder."""
-        for item in sorted(os.listdir(self.plugin_folder)):
+        for item in os.listdir(self.plugin_folder):
             if os.path.isdir(os.path.join(self.plugin_folder, item)) \
                     and os.path.exists(
                         os.path.join(self.plugin_folder, item, "__init__.py")):
@@ -328,7 +333,9 @@ class PluginManager(object):
         PluginManager has been initialized. Sets the state of the plugin to
         enabled.
         """
-        for plugin in itervalues(self.plugins):
+        plugins = self.plugins
+        for package in sorted(plugins):
+            plugin = self.plugins[package]
             with self.app.app_context():
                 plugin.enabled = True
                 plugin.setup()
